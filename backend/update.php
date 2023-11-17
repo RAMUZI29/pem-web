@@ -1,20 +1,39 @@
 <?php
-require '../config/db.php';
+require './../config/db.php';
 
 if (isset($_POST['submit'])) {
+    global $db_connect;
+
     $id = $_POST['id'];
-    $name = $_POST['name'];
+    $name = htmlspecialchars($_POST['name']);
     $price = $_POST['price'];
+    $gambar_lama = $_POST['image_old'];
+    $gambar = $gambar_lama;
 
-    $update_query = mysqli_query($db_connect, "UPDATE products SET name = '$name', price = '$price' WHERE id = $id");
+    if (isset($_FILES['image']) && $_FILES['image']['error'] !== 4) {
+        $gambar = isset($_FILES['image']['name']) ? $_FILES['image']['name'] : null;
 
-    if ($update_query) {
-        header("Location: ../show.php"); // Redirect ke halaman utama setelah mengupdate
-        exit();
-    } else {
-        echo "Gagal mengupdate data.";
+        $tempImage = $_FILES['image']['tmp_name'];
+
+        $randomFilename = time() . '-' . md5(rand()) . '-' . $gambar;  // Ganti $image menjadi $gambar
+        $uploadPath = '../upload/' . $randomFilename;
+
+        $gambar = "/upload/$randomFilename";
+
+        $upload = move_uploaded_file($tempImage, $uploadPath);
+        if (!$upload) {
+            echo "gagal upload";
+            exit;
+        }
     }
-} else {
-    echo "Permintaan tidak valid.";
+
+    $updateQuery = "UPDATE products SET
+     name = '$name',
+     price = '$price',
+     image = '$gambar' 
+     WHERE id = '$id'";
+
+
+    mysqli_query($db_connect, $updateQuery);
+    header('location: ./../show.php');
 }
-?>
